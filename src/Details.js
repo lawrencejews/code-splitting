@@ -1,78 +1,99 @@
-import { Component } from "react";
-import { withRouter } from "react-router";
-import Carousel from "./Carousel";
-import ErrorBoundary from "./ErrorBoundary";
+import { useState, useEffect, useContext } from "react";
 import ThemeContext from "./ThemeContext";
-import Modal from "./Modal";
+import useBreedList from "./useBreedList";
+import Results from "./Results";
 
-class Details extends Component {
-  constructor() {
-    super();
-    this.state = { loading: true , showModal: false}; // or you can use just state without this coz of babel packages.
-  }
-  async componentDidMount() {
+const ANIMALS = ["bird", "cat", "dog", "rabbit", "reptile"];
+
+const SearchParams = () => {
+  const [animal, updateAnimal] = useState("");
+  const [location, updateLocation] = useState("");
+  const [breed, updateBreed] = useState("");
+  const [pets, setPets] = useState([]);
+  const [breeds] = useBreedList(animal);
+  const [theme, setTheme] = useContext(ThemeContext);
+
+  useEffect(() => {
+    requestPets();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function requestPets() {
     const res = await fetch(
-      `http://pets-v2.dev-apis.com/pets?id=${this.props.match.params.id}`
+      `http://pets-v2.dev-apis.com/pets?animal=${animal}&location=${location}&breed=${breed}`
     );
     const json = await res.json();
-    this.setState(
-      Object.assign(
-        {
-          loading: false,
-        },
-        json.pets[0]
-      )
-    );
+
+    setPets(json.pets);
   }
 
-  toggleModal = () => this.setState({showModal: !this.state.showModal});
-  adopt = () => (window.location = "http://bit/ly/pet-adopt");
-
-  render() {
-    if (this.state.loading) {
-      return <h2>loading</h2>;
-    }
-
-    const { animal, breed, city, state, description, name, images , showModal} =
-      this.state;
-
-    return (
-      <div className="details">
-        <Carousel images={images} />
-        <div>
-          <h1>{name}</h1>
-          <h2>{`${animal} -${breed} - ${city} - ${state}`}</h2>
-          <ThemeContext.Consumer>
-              {([theme]) => (
-          <button onClick={this.toggleModal} style={{backgroundColor: theme}}> Adopt {name}</button>
-              )}
-          </ThemeContext.Consumer>
-          <p>{description}</p>
-          {
-              showModal ? (
-                  <Modal>
-                  <div>
-                      <h1>Would you like to adopt {name}?</h1>
-                      <div className="buttons">
-                          <button onClick={this.adopt}>Yes</button>
-                          <button onClick={this.toggleModal}>No</button>
-                        </div>
-                  </div>
-                  </Modal>
-              ) : null
-          }
-        </div>
-      </div>
-    );
-  }
-}
-
-const DetailsWithRouter = withRouter(Details);
-
-export default function DetailsWithErrorBoundary() {
   return (
-    <ErrorBoundary>
-      <DetailsWithRouter />
-    </ErrorBoundary>
+    <div className="search-params">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          requestPets();
+        }}
+      >
+        <label htmlFor="location">
+          Location
+          <input
+            id="location"
+            value={location}
+            placeholder="Location"
+            onChange={(e) => updateLocation(e.target.value)}
+          />
+        </label>
+        <label htmlFor="animal">
+          Animal
+          <select
+            id="animal"
+            value={animal}
+            onChange={(e) => updateAnimal(e.target.value)}
+            onBlur={(e) => updateAnimal(e.target.value)}
+          >
+            <option />
+            {ANIMALS.map((animal) => (
+              <option key={animal} value={animal}>
+                {animal}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label htmlFor="breed">
+          Breed
+          <select
+            disabled={!breeds.length}
+            id="breed"
+            value={breed}
+            onChange={(e) => updateBreed(e.target.value)}
+            onBlur={(e) => updateBreed(e.target.value)}
+          >
+            <option />
+            {breeds.map((breed) => (
+              <option key={breed} value={breed}>
+                {breed}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label htmlFor="theme">
+          Theme
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+            onBlur={(e) => setTheme(e.target.value)}
+          >
+            <option value="peru">Peru</option>
+            <option value="darkblue">Dark Blue</option>
+            <option value="chartreuse">Chartreuse</option>
+            <option value="mediumorchid">Medium Orchid</option>
+          </select>
+        </label>
+        <button style={{ backgroundColor: theme }}>Submit</button>
+      </form>
+      <Results pets={pets} />
+    </div>
   );
-}
+};
+
+export default SearchParams;

@@ -1,59 +1,37 @@
-import { StrictMode , useState} from "react";
-import ReactDOM from "react-dom";
+import { useState, StrictMode, lazy, Suspense } from "react";
+import { render } from "react-dom";
 import { BrowserRouter as Router, Route, Switch, Link } from "react-router-dom";
-import SearchParams from "./SearchParams";
 import ThemeContext from "./ThemeContext";
-import Details from "./Details";
-// import Pet from './Pet';
 
-// const App = () => {
-//   return React.createElement("div", {}, [
-//     React.createElement("h1", {}, "Adopt Me!"),
-//     React.createElement(Pet, {
-//       name: "Luna",
-//       animal: "Dog",
-//       breed: "Havanese",
-//     }),
-//     React.createElement(Pet, {
-//       name: "Pepper",
-//       animal: "Bird",
-//       breed: "Cockatiel",
-//     }),
-//     React.createElement(Pet, {
-//       name: "Sudo",
-//       animal: "Dog",
-//       breed: "Wheaten Terrier",
-//     }),
-//   ]);
-// };
+const Details = lazy(() => import("./Details"));
+const SearchParams = lazy(() => import("./SearchParams"));
 
 const App = () => {
-    const theme = useState("darkblue");
-
+  const theme = useState("darkblue");
   return (
-      <ThemeContext.Provider value={theme}>
-    <div>
-      <Router>
-        <header>
-            <Link to="/">
-                <h1>Adopt Me!</h1>
-            </Link>
-        </header>
-        <Switch>
-          <Route path="/details/:id">
-            <Details />
-          </Route>
-          <Route path="/">
-            <SearchParams />
-          </Route>
-        </Switch>
-      </Router>
-    </div>
-      </ThemeContext.Provider>
+    <ThemeContext.Provider value={theme}>
+      <div>
+        <Suspense fallback={<h1>loading route …</h1>}>
+          <Router>
+            <header>
+              <Link to="/">Adopt Me!</Link>
+            </header>
+            <Switch>
+              <Route path="/details/:id">
+                <Details />
+              </Route>
+              <Route path="/">
+                <SearchParams />
+              </Route>
+            </Switch>
+          </Router>
+        </Suspense>
+      </div>
+    </ThemeContext.Provider>
   );
 };
 
-ReactDOM.render(
+render(
   <StrictMode>
     <App />
   </StrictMode>,
